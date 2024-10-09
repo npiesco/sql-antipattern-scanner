@@ -1,0 +1,303 @@
+/* sql-antipattern-scanner/report_styles.css */
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2c3e50;
+    --background-color: #f4f4f4;
+    --card-background: #ffffff;
+    --text-color: #333333;
+    --border-color: #e0e0e0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--background-color);
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background-color: var(--primary-color);
+    color: white;
+    text-align: center;
+    padding: 1rem;
+}
+
+h1 {
+    margin: 0;
+}
+
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.summary-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.summary-card {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.summary-item {
+    width: 48%;
+}
+
+.dropdown-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.large-number {
+    margin: 0;
+}
+
+.dropdown-icon {
+    font-size: 0.8em;
+}
+
+.breakdown-content {
+    display: none;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.breakdown-content table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.breakdown-content th,
+.breakdown-content td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.breakdown-content th {
+    background-color: #f2f2f2;
+}
+
+.instructions {
+    margin-bottom: 20px;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.chart-card {
+    width: 100%;
+}
+
+.chart-container {
+    height: 200px;
+    position: relative;
+}
+
+h2 {
+    margin-top: 0;
+    color: var(--secondary-color);
+    font-size: 1.2rem;
+}
+
+.detailed-findings h2, .original-sql h2 {
+    color: var(--secondary-color);
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.5rem;
+    font-size: 1.5rem;
+}
+
+.issue {
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.issue summary {
+    padding: 1rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f9f9f9;
+}
+
+.issue summary:hover {
+    background-color: #f0f0f0;
+}
+
+.issue-name {
+    font-weight: bold;
+}
+
+.severity {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.critical { background-color: #FF0000; color: white; }
+.high { background-color: #FFA500; color: black; }
+.low { background-color: #008000; color: white; }
+.medium { background-color: #FFFF00; color: black; }
+
+.issue-details {
+    padding: 1rem;
+}
+
+.code-block {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.code-block h4 {
+    margin-top: 0;
+    color: var(--secondary-color);
+}
+
+pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+code {
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.original-sql pre {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 1rem;
+    overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+    .summary-container {
+        flex-direction: column;
+    }
+    
+    .summary-card, .chart-card {
+        margin: 1rem 0;
+    }
+
+    .chart-container {
+        height: 200px;
+    }
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.breakdown-link {
+    cursor: pointer;
+    font-size: 0.8em;
+    vertical-align: middle;
+}
+
+.breakdown-content {
+    display: none;
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.breakdown-content table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.breakdown-content th,
+.breakdown-content td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.breakdown-content th {
+    background-color: #f2f2f2;
+}
+
+.breakdown-instructions {
+    margin-top: 10px;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.summary-item-header {
+    display: flex;
+    align-items: center;
+}
+
+.info-icon {
+    margin-left: 10px;
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+.info-content {
+    display: none;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
