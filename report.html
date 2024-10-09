@@ -363,7 +363,7 @@ h2, h3 {
                     <h2>Detailed Findings</h2>
                     
                     <details class="issue" data-severity="critical">
-                        <summary onclick="toggleDetails(this)" aria-expanded="false">
+                        <summary>
                             <span class="issue-name">ANSI-89 Join</span>
                             <span class="severity critical">Critical</span>
                         </summary>
@@ -392,7 +392,7 @@ GROUP BY</code></pre>
                     </details>
                     
                     <details class="issue" data-severity="critical">
-                        <summary onclick="toggleDetails(this)" aria-expanded="false">
+                        <summary>
                             <span class="issue-name">NULL Comparison</span>
                             <span class="severity critical">Critical</span>
                         </summary>
@@ -416,7 +416,7 @@ WHERE u.id = o.user_id
                     </details>
                     
                     <details class="issue" data-severity="high">
-                        <summary onclick="toggleDetails(this)" aria-expanded="false">
+                        <summary>
                             <span class="issue-name">ORDER BY RAND()</span>
                             <span class="severity high">High</span>
                         </summary>
@@ -441,7 +441,7 @@ LIMIT 1000;</code></pre>
                     </details>
                     
                     <details class="issue" data-severity="high">
-                        <summary onclick="toggleDetails(this)" aria-expanded="false">
+                        <summary>
                             <span class="issue-name">Both-sided Wildcard</span>
                             <span class="severity high">High</span>
                         </summary>
@@ -468,7 +468,7 @@ WHERE u.id = o.user_id
                     </details>
                     
                     <details class="issue" data-severity="medium">
-                        <summary onclick="toggleDetails(this)" aria-expanded="false">
+                        <summary>
                             <span class="issue-name">SELECT *</span>
                             <span class="severity medium">Medium</span>
                         </summary>
@@ -492,7 +492,7 @@ WHERE u.id = o.user_id
                     </details>
                     
                     <details class="issue" data-severity="medium">
-                        <summary onclick="toggleDetails(this)" aria-expanded="false">
+                        <summary>
                             <span class="issue-name">Subquery in IN clause</span>
                             <span class="severity medium">Medium</span>
                         </summary>
@@ -524,7 +524,7 @@ WHERE u.id = o.user_id
                     </details>
                     
                     <details class="issue" data-severity="medium">
-                        <summary onclick="toggleDetails(this)" aria-expanded="false">
+                        <summary>
                             <span class="issue-name">Function in WHERE</span>
                             <span class="severity medium">Medium</span>
                         </summary>
@@ -549,7 +549,7 @@ GROUP BY 1, 2, </code></pre>
                     </details>
                     
                     <details class="issue" data-severity="medium">
-                        <summary onclick="toggleDetails(this)" aria-expanded="false">
+                        <summary>
                             <span class="issue-name">BETWEEN Operator</span>
                             <span class="severity medium">Medium</span>
                         </summary>
@@ -575,7 +575,7 @@ GROUP BY 1, 2, </code></pre>
                     </details>
                     
                     <details class="issue" data-severity="low">
-                        <summary onclick="toggleDetails(this)" aria-expanded="false">
+                        <summary>
                             <span class="issue-name">Numeric GROUP BY</span>
                             <span class="severity low">Low</span>
                         </summary>
@@ -646,12 +646,6 @@ LIMIT 1000;</code></pre>
                 button.classList.toggle('active', button.textContent.toLowerCase() === severity);
             });
         }
-
-        function toggleDetails(element) {
-            const details = element.nextElementSibling;
-            details.style.display = details.style.display === 'none' ? 'block' : 'none';
-            element.setAttribute('aria-expanded', details.style.display === 'block');
-        }
         
                 const ctx = document.getElementById('severityChart').getContext('2d');
                 const chart = new Chart(ctx, {
@@ -678,19 +672,18 @@ LIMIT 1000;</code></pre>
                                     }
                                 }
                             }
+                        },
+                        onClick: (event, elements) => {
+                            if (elements.length > 0) {
+                                const clickedSeverity = chart.data.labels[elements[0].index].toLowerCase();
+                                filterIssues(clickedSeverity);
+                            } else {
+                                filterIssues('all');
+                            }
                         }
                     }
                 });
 
-                // Restore chart click filtering
-                chart.canvas.onclick = function(evt) {
-                    const activePoints = chart.getElementsAtEventForMode(evt, 'point', chart.options);
-                    if (activePoints.length > 0) {
-                        const clickedSeverity = chart.data.labels[activePoints[0].index].toLowerCase();
-                        filterIssues(clickedSeverity);
-                    }
-                };
-                
                 // Dropdown toggle function
                 document.addEventListener('DOMContentLoaded', function() {
                     const summaryBoxes = document.querySelectorAll('.summary-box');

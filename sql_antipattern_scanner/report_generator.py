@@ -75,7 +75,7 @@ class ReportGenerator:
                     <h2>Detailed Findings</h2>
                     {% for issue in issues %}
                     <details class="issue" data-severity="{{ issue['severity'].lower() }}">
-                        <summary onclick="toggleDetails(this)" aria-expanded="false">
+                        <summary>
                             <span class="issue-name">{{ issue['name'] }}</span>
                             <span class="severity {{ issue['severity'].lower() }}">{{ issue['severity'] }}</span>
                         </summary>
@@ -127,19 +127,18 @@ class ReportGenerator:
                                     }
                                 }
                             }
+                        },
+                        onClick: (event, elements) => {
+                            if (elements.length > 0) {
+                                const clickedSeverity = chart.data.labels[elements[0].index].toLowerCase();
+                                filterIssues(clickedSeverity);
+                            } else {
+                                filterIssues('all');
+                            }
                         }
                     }
                 });
 
-                // Restore chart click filtering
-                chart.canvas.onclick = function(evt) {
-                    const activePoints = chart.getElementsAtEventForMode(evt, 'point', chart.options);
-                    if (activePoints.length > 0) {
-                        const clickedSeverity = chart.data.labels[activePoints[0].index].toLowerCase();
-                        filterIssues(clickedSeverity);
-                    }
-                };
-                
                 // Dropdown toggle function
                 document.addEventListener('DOMContentLoaded', function() {
                     const summaryBoxes = document.querySelectorAll('.summary-box');
@@ -258,12 +257,6 @@ class ReportGenerator:
             buttons.forEach(button => {
                 button.classList.toggle('active', button.textContent.toLowerCase() === severity);
             });
-        }
-
-        function toggleDetails(element) {
-            const details = element.nextElementSibling;
-            details.style.display = details.style.display === 'none' ? 'block' : 'none';
-            element.setAttribute('aria-expanded', details.style.display === 'block');
         }
         '''
         report_data['js_content'] = js_content

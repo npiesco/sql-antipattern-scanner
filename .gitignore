@@ -3,3 +3,4 @@ __pycache__
 .env
 sql_antipattern_scanner.egg-info
 query.sql
+build/
