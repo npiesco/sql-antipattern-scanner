@@ -2,6 +2,8 @@
 import argparse
 from sql_antipattern_scanner import SQLAntipatternScanner
 from test_sql_antipattern_scanner import run_tests
+from .report_generator import ReportGenerator
+import sqlparse
 
 def main():
     parser = argparse.ArgumentParser(description="SQL Antipattern Scanner")
@@ -29,7 +31,37 @@ def main():
 
     scanner = SQLAntipatternScanner()
     issues = scanner.scan_sql(sql)
-    report = scanner.generate_report(issues, sql, format=args.format)
+    
+    # Generate report data
+    report_data = {
+        "total_issues": len(issues),
+        "severity_score": scanner.get_severity_score(issues),
+        "issues": [
+            {
+                "name": ap.name,
+                "severity": ap.severity,
+                "description": ap.description,
+                "suggestion": ap.suggestion,
+                "offending_sql": offending_sql,
+                "context": context,
+                "remediation": ap.remediation
+            }
+            for ap, offending_sql, context in issues
+        ],
+        "original_sql": sqlparse.format(sql, reindent=True, keyword_case='upper')
+    }
+
+    report_generator = ReportGenerator()
+    
+    # Generate report based on specified format
+    if args.format == 'json':
+        report = report_generator.generate_json(report_data)
+    elif args.format == 'csv':
+        report = report_generator.generate_csv(report_data)
+    elif args.format == 'html':
+        report = report_generator.generate_html(report_data)
+    else:
+        raise ValueError(f"Unsupported format: {args.format}")
 
     if args.output:
         mode = 'w' if args.format != 'csv' else 'w'
