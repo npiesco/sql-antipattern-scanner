@@ -71,6 +71,6 @@ Note: If both `sql_file` and `--query` are provided, the tool will prioritize th
 
 ## License
 
-SQL Antipattern Scanner is proprietary software. Unauthorized copying, modification, distribution, or use of this software is strictly prohibited.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 © 2024 Nicholas G. Piesco. All rights reserved.

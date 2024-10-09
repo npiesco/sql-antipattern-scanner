@@ -33,12 +33,10 @@ setup(
     packages=find_packages(include=['sql_antipattern_scanner', 'sql_antipattern_scanner.*']),
     package_data={
         'sql_antipattern_scanner': [
-            '**/*.pyc',
             'config/*.json',
             'static/*.css',
         ]
     },
-    exclude_package_data={
-        '': ['*.py'],
-    },
+    include_package_data=True,
+    license="MIT",
 )

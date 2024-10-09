@@ -1,4 +1,3 @@
-global-exclude *.py
-global-include *.pyc
+global-include *.py
 include sql_antipattern_scanner/config/*.json
 include sql_antipattern_scanner/static/*.css
