@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sql_antipattern_scanner"
+version = "0.1.0"
+authors = [
+    {name = "Nicholas G. Piesco", email = "nicholas.piesco@gmail.com"},
+]
+description = "Tool to scan SQL for antipatterns and generate reports with remediation steps"
+readme = "README.md"
+requires-python = ">=3.6"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: Other/Proprietary License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/npiesco/sql-antipattern-scanner"
+"Bug Tracker" = "https://github.com/npiesco/sql-antipattern-scanner/issues"
+
+[project.optional-dependencies]
+test = ["pytest"]
