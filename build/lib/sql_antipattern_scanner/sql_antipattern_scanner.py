@@ -4,8 +4,8 @@ import sqlparse
 from sqlparse.sql import IdentifierList, Identifier, Where, Comparison, Function
 from collections import namedtuple
 from typing import List, Tuple, Set
-from sql_antipattern_scanner.antipatterns import DEFAULT_ANTIPATTERNS
-from sql_antipattern_scanner.report_generator import ReportGenerator
+from .antipatterns import DEFAULT_ANTIPATTERNS
+from .report_generator import ReportGenerator
 import json
 from functools import lru_cache
 import os

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sql_antipattern_scanner"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
     {name = "Nicholas G. Piesco", email = "nicholas.piesco@gmail.com"},
 ]
@@ -16,6 +16,11 @@ classifiers = [
     "License :: Other/Proprietary License",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+    "sqlparse",
+    "pyyaml",
+    "jinja2"
+]
 
 [project.urls]
 "Homepage" = "https://github.com/npiesco/sql-antipattern-scanner"
@@ -23,3 +28,9 @@ classifiers = [
 
 [project.optional-dependencies]
 test = ["pytest"]
+
+[project.scripts]
+sql-antipattern-scanner = "sql_antipattern_scanner.cli:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "sql_antipattern_scanner.__version__"}

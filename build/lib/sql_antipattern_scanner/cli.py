@@ -1,9 +1,9 @@
 # sql_antipattern_scanner/sql_antipattern_scanner/cli.py
 import argparse
 from typing import List, Tuple, Any, Optional
-from sql_antipattern_scanner.sql_antipattern_scanner import SQLAntipatternScanner
+from sql_antipattern_scanner import SQLAntipatternScanner
 from sql_antipattern_scanner.tests.test_sql_antipattern_scanner import run_tests
-from sql_antipattern_scanner.report_generator import ReportGenerator
+from .report_generator import ReportGenerator
 import sqlparse
 
 def main() -> None:
