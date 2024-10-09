@@ -3,6 +3,7 @@ import re
 import sqlparse 
 from sqlparse.sql import IdentifierList, Identifier, Where, Comparison, Function
 from collections import namedtuple
+from typing import List, Tuple, Set
 from .antipatterns import DEFAULT_ANTIPATTERNS
 from .report_generator import ReportGenerator
 import json
@@ -16,12 +17,25 @@ with open(config_path, 'r') as config_file:
 Antipattern = namedtuple('Antipattern', ['name', 'description', 'severity', 'suggestion', 'remediation'])
 
 class SQLAntipatternScanner:
+    """
+    Class for scanning SQL queries to detect antipatterns.
+
+    Provides methods to load custom antipatterns, scan SQL queries,
+    and generate reports on detected antipatterns.
+    """
+
     def __init__(self):
-        self.patterns = DEFAULT_ANTIPATTERNS
-        self.ignored_patterns = set()
+        """
+        Initialize SQLAntipatternScanner with default patterns and load custom antipatterns.
+        """
+        self.patterns: List[Tuple[re.Pattern, Antipattern]] = DEFAULT_ANTIPATTERNS
+        self.ignored_patterns: Set[str] = set()
         self.load_custom_antipatterns()
 
-    def load_custom_antipatterns(self):
+    def load_custom_antipatterns(self) -> None:
+        """
+        Load custom antipatterns from config file.
+        """
         try:
             with open('config.json', 'r') as f:
                 config = json.load(f)
@@ -34,14 +48,31 @@ class SQLAntipatternScanner:
         except FileNotFoundError:
             pass
 
-    def add_pattern(self, pattern, antipattern):
+    def add_pattern(self, pattern: re.Pattern, antipattern: Antipattern) -> None:
+        """
+        Add new antipattern to scanner.
+
+        :param pattern: Compiled regex pattern to match antipattern
+        :param antipattern: Antipattern namedtuple describing antipattern
+        """
         self.patterns.append((pattern, antipattern))
 
-    def ignore_pattern(self, pattern_name):
+    def ignore_pattern(self, pattern_name: str) -> None:
+        """
+        Add pattern name to set of ignored patterns.
+
+        :param pattern_name: Name of pattern to ignore
+        """
         self.ignored_patterns.add(pattern_name)
 
     @lru_cache(maxsize=100)
-    def scan_sql(self, sql):
+    def scan_sql(self, sql: str) -> List[Tuple[Antipattern, str, str]]:
+        """
+        Scan SQL query for antipatterns.
+
+        :param sql: SQL query to scan
+        :return: List of tuples containing antipattern, offending SQL, and context
+        """
         antipatterns = []
         parsed = sqlparse.parse(sql)[0]
         
@@ -51,17 +82,16 @@ class SQLAntipatternScanner:
             ("ANSI-89 Join", self.check_ansi89_join),
             ("Function in WHERE", self.check_functions_in_where),
             ("Numeric GROUP BY", self.check_numeric_group_by),
-            ("NULL Comparison", self.check_null_comparison),  # Add this line
+            ("NULL Comparison", self.check_null_comparison),
         ]
         
-        detected_antipatterns = set()
+        detected_antipatterns: Set[str] = set()
         for name, check_function in checks:
             if name not in self.ignored_patterns:
                 for antipattern, offending_sql, context in check_function(parsed):
                     if antipattern.name not in detected_antipatterns:
                         antipatterns.append((antipattern, offending_sql, context))
                         detected_antipatterns.add(antipattern.name)
-        
         
         # Apply regex checks for remaining antipatterns
         for pattern, antipattern in self.patterns:
@@ -75,7 +105,13 @@ class SQLAntipatternScanner:
         
         return antipatterns
 
-    def apply_regex_checks(self, sql):
+    def apply_regex_checks(self, sql: str) -> List[Tuple[Antipattern, str, str]]:
+        """
+        Apply regex-based checks to SQL query.
+
+        :param sql: SQL query to check
+        :return: List of tuples containing antipattern, offending SQL, and context
+        """
         antipatterns = []
         formatted_sql = sqlparse.format(sql, strip_comments=True, keyword_case='upper')
         formatted_sql_oneline = re.sub(r'\s+', ' ', formatted_sql)
@@ -98,7 +134,13 @@ class SQLAntipatternScanner:
         
         return antipatterns
 
-    def check_select_star(self, parsed):
+    def check_select_star(self, parsed: sqlparse.sql.Statement) -> List[Tuple[Antipattern, str, str]]:
+        """
+        Check for 'SELECT *' in query.
+
+        :param parsed: Parsed SQL statement
+        :return: List of tuples containing antipattern, offending SQL, and context
+        """
         antipatterns = []
         select_seen = False
         for token in parsed.tokens:
@@ -111,7 +153,13 @@ class SQLAntipatternScanner:
                 break
         return antipatterns
 
-    def check_ansi89_join(self, parsed):
+    def check_ansi89_join(self, parsed: sqlparse.sql.Statement) -> List[Tuple[Antipattern, str, str]]:
+        """
+        Check for ANSI-89 style joins in query.
+
+        :param parsed: Parsed SQL statement
+        :return: List of tuples containing antipattern, offending SQL, and context
+        """
         antipatterns = []
         from_seen = False
         comma_join = False
@@ -151,7 +199,13 @@ class SQLAntipatternScanner:
 
         return antipatterns
 
-    def check_null_comparison(self, parsed):
+    def check_null_comparison(self, parsed: sqlparse.sql.Statement) -> List[Tuple[Antipattern, str, str]]:
+        """
+        Check for incorrect NULL comparisons in query.
+
+        :param parsed: Parsed SQL statement
+        :return: List of tuples containing antipattern, offending SQL, and context
+        """
         antipatterns = []
         for token in parsed.tokens:
             if isinstance(token, Where):
@@ -163,7 +217,13 @@ class SQLAntipatternScanner:
                                 antipatterns.append((antipattern, str(comparison), self.get_context(str(parsed), parsed.token_index(token))))
         return antipatterns
 
-    def check_numeric_group_by(self, parsed):
+    def check_numeric_group_by(self, parsed: sqlparse.sql.Statement) -> List[Tuple[Antipattern, str, str]]:
+        """
+        Check for numeric GROUP BY clauses in query.
+
+        :param parsed: Parsed SQL statement
+        :return: List of tuples containing antipattern, offending SQL, and context
+        """
         antipatterns = []
         for token in parsed.tokens:
             if token.ttype is sqlparse.tokens.Keyword and token.value.upper() == 'GROUP BY':
@@ -180,7 +240,13 @@ class SQLAntipatternScanner:
                     break
         return antipatterns
 
-    def check_functions_in_where(self, parsed):
+    def check_functions_in_where(self, parsed: sqlparse.sql.Statement) -> List[Tuple[Antipattern, str, str]]:
+        """
+        Check for functions used in WHERE clauses in query.
+
+        :param parsed: Parsed SQL statement
+        :return: List of tuples containing antipattern, offending SQL, and context
+        """
         antipatterns = []
         for token in parsed.tokens:
             if isinstance(token, Where):
@@ -194,7 +260,13 @@ class SQLAntipatternScanner:
                             antipatterns.append((antipattern, str(sub_token), context))
         return antipatterns
 
-    def check_subquery_in_in_clause(self, parsed):
+    def check_subquery_in_in_clause(self, parsed: sqlparse.sql.Statement) -> List[Tuple[Antipattern, str, str]]:
+        """
+        Check for subqueries used in IN clauses in query.
+
+        :param parsed: Parsed SQL statement
+        :return: List of tuples containing antipattern, offending SQL, and context
+        """
         antipatterns = []
         def recursive_check(token):
             if isinstance(token, sqlparse.sql.TokenList):
@@ -213,16 +285,39 @@ class SQLAntipatternScanner:
         recursive_check(parsed)
         return antipatterns
 
-    def get_context(self, sql, position, context_chars=100):
+    def get_context(self, sql: str, position: int, context_chars: int = 100) -> str:
+        """
+        Get context around specific position in query.
+
+        :param sql: Full SQL query
+        :param position: Position to get context around
+        :param context_chars: Number of characters to include in context
+        :return: String containing context
+        """
         start = max(0, position - context_chars)
         end = min(len(sql), position + context_chars)
         return sql[start:end]
 
-    def get_severity_score(self, antipatterns):
+    def get_severity_score(self, antipatterns: List[Tuple[Antipattern, str, str]]) -> int:
+        """
+        Calculate severity score for detected antipatterns.
+
+        :param antipatterns: List of detected antipatterns
+        :return: Calculated severity score
+        """
         severity_map = {'Low': 1, 'Medium': 2, 'High': 3, 'Critical': 4}
         return sum(severity_map[ap.severity] for ap, _, _ in antipatterns)
 
-    def generate_report(self, antipatterns, sql, format='json'):
+    def generate_report(self, antipatterns: List[Tuple[Antipattern, str, str]], sql: str, format: str = 'json') -> str:
+        """
+        Generate report of detected antipatterns in specified format.
+
+        :param antipatterns: List of detected antipatterns
+        :param sql: Original SQL query
+        :param format: Desired report format ('json', 'csv', or 'html')
+        :return: Generated report as string
+        :raises ValueError: If unsupported format is specified
+        """
         report_data = {
             "total_issues": len(antipatterns),
             "severity_score": self.get_severity_score(antipatterns),
