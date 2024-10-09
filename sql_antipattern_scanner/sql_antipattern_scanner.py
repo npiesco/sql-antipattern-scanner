@@ -7,6 +7,11 @@ from .antipatterns import DEFAULT_ANTIPATTERNS
 from .report_generator import ReportGenerator
 import json
 from functools import lru_cache
+import os
+
+config_path = os.path.join(os.path.dirname(__file__), 'config', 'config.json')
+with open(config_path, 'r') as config_file:
+    config = json.load(config_file)
 
 Antipattern = namedtuple('Antipattern', ['name', 'description', 'severity', 'suggestion', 'remediation'])
 
