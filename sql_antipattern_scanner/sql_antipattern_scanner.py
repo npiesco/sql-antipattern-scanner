@@ -51,6 +51,7 @@ class SQLAntipatternScanner:
             ("ANSI-89 Join", self.check_ansi89_join),
             ("Function in WHERE", self.check_functions_in_where),
             ("Numeric GROUP BY", self.check_numeric_group_by),
+            ("NULL Comparison", self.check_null_comparison),  # Add this line
         ]
         
         detected_antipatterns = set()
@@ -114,19 +115,52 @@ class SQLAntipatternScanner:
         antipatterns = []
         from_seen = False
         comma_join = False
+        join_tokens = []
+        from_clause = ""
+        last_join = None
+
         for token in parsed.tokens:
             if token.ttype is sqlparse.tokens.Keyword and token.value.upper() == 'FROM':
                 from_seen = True
-            elif from_seen and isinstance(token, IdentifierList):
-                if ',' in token.value and not any(subtoken.ttype is sqlparse.tokens.Keyword and subtoken.value.upper() in ['SELECT', 'GROUP BY'] for subtoken in token.tokens):
+                from_clause = str(token)
+            elif from_seen:
+                from_clause += str(token)
+                if isinstance(token, IdentifierList):
+                    identifiers = [t for t in token.tokens if isinstance(t, Identifier)]
+                    join_tokens.extend(identifiers)
+                    if ',' in token.value and len(identifiers) > 1:
+                        comma_join = True
+                elif isinstance(token, Identifier):
+                    join_tokens.append(token)
+                    if ',' in token.value:
+                        comma_join = True
+                elif token.ttype is sqlparse.tokens.Punctuation and token.value == ',':
                     comma_join = True
+                elif token.ttype is sqlparse.tokens.Keyword and token.value.upper() == 'JOIN':
+                    last_join = token
+                elif token.ttype is sqlparse.tokens.Keyword and token.value.upper() in ['WHERE', 'GROUP BY', 'ORDER BY', 'LIMIT']:
                     break
-            elif token.ttype is sqlparse.tokens.Keyword and token.value.upper() in ['WHERE', 'GROUP BY', 'ORDER BY', 'LIMIT']:
-                break
-        if comma_join:
-            antipattern = next((ap for _, ap in self.patterns if ap.name == "ANSI-89 Join"), None)
-            if antipattern:
-                antipatterns.append((antipattern, str(token), self.get_context(str(parsed), parsed.token_index(token))))
+
+        if comma_join or (last_join and ',' in from_clause[from_clause.index(str(last_join)):]):
+            non_subquery_tokens = [t for t in join_tokens if not isinstance(t, sqlparse.sql.Parenthesis)]
+            if len(non_subquery_tokens) > 1:
+                antipattern = next((ap for _, ap in self.patterns if ap.name == "ANSI-89 Join"), None)
+                if antipattern:
+                    join_str = ', '.join(str(t).strip() for t in non_subquery_tokens)
+                    antipatterns.append((antipattern, join_str, from_clause))
+
+        return antipatterns
+
+    def check_null_comparison(self, parsed):
+        antipatterns = []
+        for token in parsed.tokens:
+            if isinstance(token, Where):
+                for comparison in token.tokens:
+                    if isinstance(comparison, Comparison):
+                        if comparison.right.value.upper() == 'NULL' and comparison.tokens[1].value != 'IS':
+                            antipattern = next((ap for _, ap in self.patterns if ap.name == "NULL Comparison"), None)
+                            if antipattern:
+                                antipatterns.append((antipattern, str(comparison), self.get_context(str(parsed), parsed.token_index(token))))
         return antipatterns
 
     def check_numeric_group_by(self, parsed):

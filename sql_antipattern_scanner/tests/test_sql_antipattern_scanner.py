@@ -1,5 +1,5 @@
 # sql-antipattern-scanner/test_sql_antipattern_scanner.py
-from sql_antipattern_scanner import SQLAntipatternScanner
+from sql_antipattern_scanner.sql_antipattern_scanner import SQLAntipatternScanner
 
 import unittest
 
@@ -22,8 +22,17 @@ class TestSQLAntipatternScanner(unittest.TestCase):
             orders o 
         WHERE u.id = o.user_id
         """
+        sql_subquery_join = "SELECT * FROM (SELECT id FROM users) u, (SELECT id FROM orders) o"
+        sql_complex = """
+        SELECT u.name, o.order_date, (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) as item_count
+        FROM users u, orders o, (SELECT * FROM products WHERE in_stock = 1) p
+        WHERE u.id = o.user_id AND o.product_id = p.id
+        """
+        
         issues_single = self.scanner.scan_sql(sql_single_line)
         issues_multi = self.scanner.scan_sql(sql_multi_line)
+        issues_subquery_join = self.scanner.scan_sql(sql_subquery_join)
+        issues_complex = self.scanner.scan_sql(sql_complex)
         
         self.assertEqual(len(issues_single), 1)
         self.assertEqual(issues_single[0][0].name, "ANSI-89 Join")
@@ -31,16 +40,37 @@ class TestSQLAntipatternScanner(unittest.TestCase):
         
         self.assertEqual(len(issues_multi), 1)
         self.assertEqual(issues_multi[0][0].name, "ANSI-89 Join")
-        self.assertIn("users u,", issues_multi[0][1])
-        self.assertIn("orders o", issues_multi[0][1])
+        self.assertIn("users u, orders o", issues_multi[0][1])
+        
+        self.assertEqual(len(issues_subquery_join), 2)  # ANSI-89 Join and SELECT *
+        self.assertTrue(any(issue[0].name == "ANSI-89 Join" for issue in issues_subquery_join))
+        self.assertTrue(any(issue[0].name == "SELECT *" for issue in issues_subquery_join))
+        
+        self.assertEqual(len(issues_complex), 2)  # ANSI-89 Join and SELECT *
+        self.assertTrue(any(issue[0].name == "ANSI-89 Join" for issue in issues_complex))
+        self.assertTrue(any(issue[0].name == "SELECT *" for issue in issues_complex))
+        ansi89_issue = next(issue for issue in issues_complex if issue[0].name == "ANSI-89 Join")
+        self.assertIn("users u, orders o, (SELECT * FROM products WHERE in_stock = 1) p", ansi89_issue[1])
 
     def test_null_comparison(self):
-        sql = "SELECT * FROM users WHERE status = NULL"
-        issues = self.scanner.scan_sql(sql)
-        self.assertEqual(len(issues), 2)  # SELECT * and NULL Comparison
-        self.assertEqual(issues[0][0].name, "SELECT *")
-        self.assertEqual(issues[1][0].name, "NULL Comparison")
-        self.assertEqual(issues[1][1], "status = NULL")
+        sql_equal_null = "SELECT * FROM users WHERE status = NULL"
+        sql_is_null = "SELECT * FROM users WHERE status IS NULL"
+        sql_not_null = "SELECT * FROM users WHERE status IS NOT NULL"
+        
+        issues_equal_null = self.scanner.scan_sql(sql_equal_null)
+        issues_is_null = self.scanner.scan_sql(sql_is_null)
+        issues_not_null = self.scanner.scan_sql(sql_not_null)
+        
+        self.assertEqual(len(issues_equal_null), 2)  # SELECT * and NULL Comparison
+        self.assertEqual(issues_equal_null[0][0].name, "SELECT *")
+        self.assertEqual(issues_equal_null[1][0].name, "NULL Comparison")
+        self.assertEqual(issues_equal_null[1][1], "status = NULL")
+        
+        self.assertEqual(len(issues_is_null), 1)  # Only SELECT *
+        self.assertEqual(issues_is_null[0][0].name, "SELECT *")
+        
+        self.assertEqual(len(issues_not_null), 1)  # Only SELECT *
+        self.assertEqual(issues_not_null[0][0].name, "SELECT *")
 
     def test_leading_wildcard(self):
         sql = "SELECT * FROM users WHERE name LIKE '%John%'"
@@ -88,7 +118,6 @@ class TestSQLAntipatternScanner(unittest.TestCase):
     def test_numeric_group_by(self):
         sql = "SELECT id, name FROM users GROUP BY 1, 2"
         issues = self.scanner.scan_sql(sql)
-        print(f"Issues: {issues}")  # Debug print statement
         self.assertEqual(len(issues), 1)
         self.assertEqual(issues[0][0].name, "Numeric GROUP BY")
         self.assertIn("GROUP BY 1, 2", issues[0][1])
@@ -226,6 +255,119 @@ class TestSQLAntipatternScanner(unittest.TestCase):
         issues = self.scanner.scan_sql(sql)
         self.assertTrue(any(issue[0].name == "Correlated Subquery" for issue in issues))
 
+    def test_complex_ansi89_join(self):
+        sql = """
+        SELECT u.name, o.order_date, p.product_name
+        FROM users u, orders o, order_items oi, products p
+        WHERE u.id = o.user_id
+        AND o.id = oi.order_id
+        AND oi.product_id = p.id
+        """
+        issues = self.scanner.scan_sql(sql)
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0][0].name, "ANSI-89 Join")
+        self.assertIn("users u, orders o, order_items oi, products p", issues[0][1])
+        self.assertIn("FROM users u, orders o, order_items oi, products p", issues[0][2])
+
+    def test_mixed_join_syntax(self):
+        sql = """
+        SELECT u.name, o.order_date, oi.quantity
+        FROM users u
+        JOIN orders o ON u.id = o.user_id, order_items oi
+        WHERE o.id = oi.order_id
+        """
+        issues = self.scanner.scan_sql(sql)
+        
+        self.assertTrue(any(issue[0].name == "ANSI-89 Join" for issue in issues), "Failed to detect ANSI-89 Join in mixed syntax")
+        ansi89_issue = next((issue for issue in issues if issue[0].name == "ANSI-89 Join"), None)
+        if ansi89_issue:
+            self.assertIn("order_items oi", ansi89_issue[1], "Failed to identify the correct table in ANSI-89 Join")
+
+    def test_complex_nested_subqueries(self):
+        sql = """
+        SELECT *
+        FROM users
+        WHERE id IN (
+            SELECT user_id
+            FROM orders
+            WHERE total > (
+                SELECT AVG(total)
+                FROM orders
+                WHERE status = 'completed'
+            )
+        )
+        """
+        issues = self.scanner.scan_sql(sql)
+        antipattern_names = [issue[0].name for issue in issues]
+        self.assertIn("SELECT *", antipattern_names)
+        self.assertIn("Subquery in IN clause", antipattern_names)
+
+    def test_case_insensitive_matching(self):
+        sql = "select * from Users WHERE Name LIKE '%John%'"
+        issues = self.scanner.scan_sql(sql)
+        antipattern_names = [issue[0].name for issue in issues]
+        self.assertIn("SELECT *", antipattern_names)
+        self.assertIn("Both-sided Wildcard", antipattern_names)
+
+    def test_enhanced_function_in_where(self):
+        sql = """
+        SELECT * FROM users 
+        WHERE UPPER(name) = 'JOHN' 
+        AND LOWER(email) LIKE '%@example.com' 
+        AND CONCAT(first_name, ' ', last_name) = 'John Doe'
+        AND DATE(created_at) = '2023-01-01'
+        """
+        issues = self.scanner.scan_sql(sql)
+        function_issues = [issue for issue in issues if issue[0].name == "Function in WHERE"]
+        self.assertEqual(len(function_issues), 4)
+
+    def test_wildcard_detection(self):
+        sql = """
+        SELECT * FROM users
+        WHERE name LIKE '%John'
+        AND email LIKE 'user@%'
+        AND description LIKE '%important%'
+        """
+        issues = self.scanner.scan_sql(sql)
+        wildcard_issues = [issue for issue in issues if issue[0].name in ["Leading Wildcard", "Trailing Wildcard", "Both-sided Wildcard"]]
+        self.assertEqual(len(wildcard_issues), 3)
+        wildcard_names = [issue[0].name for issue in wildcard_issues]
+        self.assertIn("Leading Wildcard", wildcard_names)
+        self.assertIn("Trailing Wildcard", wildcard_names)
+        self.assertIn("Both-sided Wildcard", wildcard_names)
+
+    def test_distinct_usage(self):
+        sql = "SELECT DISTINCT user_id FROM orders"
+        issues = self.scanner.scan_sql(sql)
+        self.assertTrue(any(issue[0].name == "DISTINCT Usage" for issue in issues))
+
+    def test_correlated_subquery(self):
+        sql = """
+        SELECT *
+        FROM orders o
+        WHERE EXISTS (
+            SELECT 1
+            FROM order_items oi
+            WHERE oi.order_id = o.id
+            AND oi.quantity > 10
+        )
+        """
+        issues = self.scanner.scan_sql(sql)
+        self.assertTrue(any(issue[0].name == "Correlated Subquery" for issue in issues))
+
+    def test_complex_ansi89_join(self):
+        sql = """
+        SELECT u.name, o.order_date, p.product_name
+        FROM users u, orders o, order_items oi, products p
+        WHERE u.id = o.user_id
+        AND o.id = oi.order_id
+        AND oi.product_id = p.id
+        """
+        issues = self.scanner.scan_sql(sql)
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0][0].name, "ANSI-89 Join")
+        self.assertIn("users u, orders o, order_items oi, products p", issues[0][1])
+        self.assertIn("FROM users u, orders o, order_items oi, products p", issues[0][2])
 
 def run_tests():
     test_suite = unittest.TestLoader().loadTestsFromTestCase(TestSQLAntipatternScanner)

@@ -1,7 +1,7 @@
 # sql_antipattern_scanner/sql_antipattern_scanner/cli.py
 import argparse
 from sql_antipattern_scanner import SQLAntipatternScanner
-from test_sql_antipattern_scanner import run_tests
+from sql_antipattern_scanner.tests.test_sql_antipattern_scanner import run_tests
 from .report_generator import ReportGenerator
 import sqlparse
 
@@ -18,6 +18,7 @@ def main():
         print("Running unit tests...")
         run_tests()
         print("Unit tests completed.")
+        return
 
     if args.sql_file:
         print(f"Scanning SQL file: {args.sql_file}")
