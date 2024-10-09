@@ -3,6 +3,7 @@ import json
 import csv
 from io import StringIO
 from jinja2 import Template
+import os
 
 class ReportGenerator:
     def __init__(self):
@@ -13,7 +14,9 @@ class ReportGenerator:
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>SQL Antipattern Scan Report</title>
-            <link rel="stylesheet" href="report_styles.css">
+            <style>
+                {{ css_content }}
+            </style>
             <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
             <style>
@@ -266,8 +269,16 @@ class ReportGenerator:
         '''
         report_data['chart_click_listener'] = chart_click_listener
         
-        # Add severity weights
+        # Severity weights
         severity_weights = {'Low': 1, 'Medium': 2, 'High': 3, 'Critical': 4}
         report_data['severity_weights'] = severity_weights
         
+        # Read  CSS file
+        css_path = os.path.join(os.path.dirname(__file__), 'static', 'report_styles.css')
+        with open(css_path, 'r') as css_file:
+            css_content = css_file.read()
+
+        # Add CSS content to report data and render template with updated report data
+        report_data['css_content'] = css_content
+
         return self.html_template.render(**report_data)

@@ -1,4 +1,4 @@
-# sql-antipattern-scanner/antipatterns.py
+# sql_antipattern_scanner/sql_antipattern_scanner/antipatterns.py
 import re
 from collections import namedtuple
 

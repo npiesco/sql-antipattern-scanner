@@ -1,4 +1,4 @@
-# sql-antipattern-scanner/sql_antipattern_scanner.py
+# sql_antipattern_scanner/sql_antipattern_scanner.py
 import re
 import sqlparse 
 from sqlparse.sql import IdentifierList, Identifier, Where, Comparison, Function
