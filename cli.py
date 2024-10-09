@@ -7,7 +7,7 @@ def main():
     parser = argparse.ArgumentParser(description="SQL Antipattern Scanner")
     parser.add_argument("sql_file", nargs='?', help="Path to the SQL file to scan")
     parser.add_argument("--query", help="SQL query to scan")
-    parser.add_argument("--format", choices=["json", "csv", "html"], default="json", help="Output format")
+    parser.add_argument("--format", nargs='?', choices=["json", "csv", "html"], default="json", const="json", help="Output format (default: json)")
     parser.add_argument("--output", help="Output file path")
     parser.add_argument("--run-tests", action="store_true", help="Run unit tests")
     args = parser.parse_args()

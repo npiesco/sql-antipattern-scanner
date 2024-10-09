@@ -3,7 +3,7 @@ import re
 import sqlparse 
 from sqlparse.sql import IdentifierList, Identifier, Where, Comparison, Function
 from collections import namedtuple
-from antipatterns import DEFAULT_ANTIPATTERNS
+from .antipatterns import DEFAULT_ANTIPATTERNS
 from report_generator import ReportGenerator
 import json
 from functools import lru_cache
