@@ -1,4 +1,4 @@
-# sql-antipattern-scanner/sql_antipattern_scanner/cli.py
+# sql-antipattern-scanner/cli.py
 import argparse
 from sql_antipattern_scanner import SQLAntipatternScanner
 from test_sql_antipattern_scanner import run_tests

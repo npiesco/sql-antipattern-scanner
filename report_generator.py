@@ -1,4 +1,4 @@
-# sql-antipattern-scanner/sql_antipattern_scanner/report_generator.py
+# sql-antipattern-scanner/report_generator.py
 import json
 import csv
 from io import StringIO
@@ -16,6 +16,33 @@ class ReportGenerator:
             <link rel="stylesheet" href="report_styles.css">
             <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+            <style>
+                .summary-box {
+                    cursor: pointer;
+                    border: 1px solid #ddd;
+                    padding: 10px;
+                    margin-bottom: 10px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                .toggle-icon {
+                    transition: transform 0.3s ease;
+                }
+                .summary-box.active .toggle-icon {
+                    transform: rotate(180deg);
+                }
+                .breakdown {
+                    display: none;
+                    margin-top: 10px;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    background-color: #f9f9f9;
+                }
+                .show {
+                    display: block;
+                }
+            </style>
         </head>
         <body>
             <header>
@@ -26,54 +53,32 @@ class ReportGenerator:
                     <div class="summary-card">
                         <div class="summary-item">
                             <h2>Total Issues</h2>
-                            <div class="dropdown-box" onclick="toggleBreakdown('total-issues-breakdown')">
+                            <div class="summary-box" onclick="toggleBreakdown('total-issues-breakdown', this)">
                                 <p class="large-number">{{ total_issues }}</p>
-                                <span class="dropdown-icon">&#9662;</span>
+                                <span class="toggle-icon">&#9662;</span>
                             </div>
-                            <div id="total-issues-breakdown" class="breakdown-content">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Severity</th>
-                                            <th>Count</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for severity in ['Critical', 'High', 'Medium', 'Low'] %}
-                                        <tr>
-                                            <td>{{ severity }}</td>
-                                            <td>{{ severity_counts[severity] }}</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                            <div id="total-issues-breakdown" class="breakdown">
+                                <h3>Total Issues Breakdown</h3>
+                                <ul>
+                                    {% for severity in ['Critical', 'High', 'Medium', 'Low'] %}
+                                    <li>{{ severity }}: {{ severity_counts[severity] }}</li>
+                                    {% endfor %}
+                                </ul>
                             </div>
                         </div>
                         <div class="summary-item">
                             <h2>Severity Score</h2>
-                            <div class="dropdown-box" onclick="toggleBreakdown('severity-score-breakdown')">
+                            <div class="summary-box" onclick="toggleBreakdown('severity-score-breakdown', this)">
                                 <p class="large-number">{{ severity_score }}</p>
-                                <span class="dropdown-icon">&#9662;</span>
+                                <span class="toggle-icon">&#9662;</span>
                             </div>
-                            <div id="severity-score-breakdown" class="breakdown-content">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Severity</th>
-                                            <th>Calculation</th>
-                                            <th>Score</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for severity in ['Critical', 'High', 'Medium', 'Low'] %}
-                                        <tr>
-                                            <td>{{ severity }}</td>
-                                            <td>{{ severity_counts[severity] }} x {{ severity_weights[severity] }}</td>
-                                            <td>{{ severity_counts[severity] * severity_weights[severity] }}</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                            <div id="severity-score-breakdown" class="breakdown">
+                                <h3>Severity Score Breakdown</h3>
+                                <ul>
+                                    {% for severity in ['Critical', 'High', 'Medium', 'Low'] %}
+                                    <li>{{ severity }}: {{ severity_counts[severity] }} x {{ severity_weights[severity] }} = {{ severity_counts[severity] * severity_weights[severity] }}</li>
+                                    {% endfor %}
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -124,31 +129,6 @@ class ReportGenerator:
                     <h2>Original SQL</h2>
                     <pre><code>{{ original_sql }}</code></pre>
                 </section>
-                
-                <!-- Add breakdown modals -->
-                <div id="total-issues-breakdown" class="modal">
-                    <div class="modal-content">
-                        <span class="close" onclick="closeModal('total-issues-breakdown')">&times;</span>
-                        <h2>Total Issues Breakdown</h2>
-                        <ul>
-                            {% for severity in ['Critical', 'High', 'Medium', 'Low'] %}
-                            <li>{{ severity }}: {{ severity_counts[severity] }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
-
-                <div id="severity-score-breakdown" class="modal">
-                    <div class="modal-content">
-                        <span class="close" onclick="closeModal('severity-score-breakdown')">&times;</span>
-                        <h2>Severity Score Breakdown</h2>
-                        <ul>
-                            {% for severity in ['Critical', 'High', 'Medium', 'Low'] %}
-                            <li>{{ severity }}: {{ severity_counts[severity] }} x {{ severity_weights[severity] }} = {{ severity_counts[severity] * severity_weights[severity] }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
             </main>
             <script>
                 // Create severity distribution chart
@@ -221,9 +201,10 @@ class ReportGenerator:
                     });
                 }
                 
-                function toggleBreakdown(breakdownId) {
-                    const breakdown = document.getElementById(breakdownId);
-                    breakdown.style.display = breakdown.style.display === 'none' ? 'block' : 'none';
+                function toggleBreakdown(breakdownId, summaryBox) {
+                    var breakdown = document.getElementById(breakdownId);
+                    summaryBox.classList.toggle("active");
+                    breakdown.classList.toggle("show");
                 }
             </script>
         </body>

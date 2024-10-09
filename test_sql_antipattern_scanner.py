@@ -1,4 +1,4 @@
-# sql-antipattern-scanner/tests/test_sql_antipattern_scanner.py
+# sql-antipattern-scanner/test_sql_antipattern_scanner.py
 from sql_antipattern_scanner import SQLAntipatternScanner
 
 import unittest
