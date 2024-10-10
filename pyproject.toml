@@ -21,6 +21,7 @@ dependencies = [
     "pyyaml",
     "jinja2"
 ]
+license = {text = "MIT"}
 
 [project.urls]
 "Homepage" = "https://github.com/npiesco/sql-antipattern-scanner"
